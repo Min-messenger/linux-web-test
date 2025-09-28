@@ -1,60 +1,1806 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <title>Virtual Linux Desktop</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux Desktop Constructor</title>
+<style>
+html, body {
+margin: 0;
+padding: 0;
+width: 100vw;
+height: 100vh;
+overflow: hidden;
+}
+
+.desktop {
+width: 100vw;
+height: 100vh;
+}
+
+:root {
+--primary-color: #4a86e8;
+--secondary-color: #6aa84f;
+--dark-color: #2c3e50;
+--light-color: #ecf0f1;
+--border-radius: 8px;
+--shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+--animation-duration: 0.3s;
+--animation-timing: ease;
+}
+
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+background: #000;
+color: var(--light-color);
+height: 100vh;
+overflow: hidden;
+}
+
+.desktop {
+width: 100vw;
+height: 100vh;
+background: url('https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+position: relative;
+overflow: hidden;
+}
+
+.window {
+position: absolute;
+border-radius: var(--border-radius);
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+min-width: 300px;
+min-height: 200px;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+resize: both;
+transition: all var(--animation-duration) var(--animation-timing);
+background: rgba(255, 255, 255, 0.95);
+backdrop-filter: blur(10px);
+border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.window.maximized {
+width: 100% !important;
+height: 100% !important;
+top: 0 !important;
+left: 0 !important;
+border-radius: 0;
+resize: none;
+}
+
+.window.minimized {
+transform: scale(0);
+opacity: 0;
+pointer-events: none;
+}
+
+.window-header {
+padding: 12px 15px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+cursor: move;
+user-select: none;
+background: var(--primary-color);
+color: white;
+transition: background 0.3s ease;
+}
+
+.window-title {
+font-weight: 600;
+font-size: 0.9rem;
+}
+
+.window-controls {
+display: flex;
+gap: 8px;
+}
+
+.window-control {
+width: 14px;
+height: 14px;
+border-radius: 50%;
+cursor: pointer;
+transition: transform 0.2s ease;
+}
+
+.window-control:hover {
+transform: scale(1.1);
+}
+
+.close { background: #ff5f57; }
+.minimize { background: #ffbd2e; }
+.maximize { background: #28ca42; }
+
+.window-content {
+flex: 1;
+padding: 15px;
+overflow: auto;
+color: #333;
+}
+
+.taskbar {
+position: absolute;
+bottom: 0;
+left: 0;
+right: 0;
+background: rgba(0, 0, 0, 0.7);
+padding: 10px;
+display: flex;
+align-items: center;
+gap: 10px;
+backdrop-filter: blur(10px);
+z-index: 1000;
+}
+
+.app-icon {
+width: 50px;
+height: 50px;
+border-radius: var(--border-radius);
+display: flex;
+align-items: center;
+justify-content: center;
+background: rgba(255, 255, 255, 0.2);
+cursor: pointer;
+transition: all 0.3s ease;
+font-size: 1.5rem;
+}
+
+.app-icon:hover {
+background: rgba(255, 255, 255, 0.3);
+transform: translateY(-5px);
+}
+
+.app-icon.active {
+background: var(--primary-color);
+}
+
+.desktop-icon {
+position: absolute;
+width: 80px;
+text-align: center;
+cursor: pointer;
+padding: 10px;
+border-radius: var(--border-radius);
+transition: all 0.3s ease;
+backdrop-filter: blur(5px);
+background: rgba(255, 255, 255, 0.1);
+}
+
+.desktop-icon:hover {
+background: rgba(255, 255, 255, 0.2);
+transform: translateY(-5px);
+}
+
+.desktop-icon .icon {
+width: 50px;
+height: 50px;
+margin: 0 auto 5px;
+border-radius: 10px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 1.8rem;
+background: rgba(255, 255, 255, 0.2);
+}
+
+.desktop-icon span {
+font-size: 0.8rem;
+display: block;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.settings-panel {
+position: fixed;
+top: 20px;
+right: 20px;
+width: 350px;
+background: rgba(0, 0, 0, 0.8);
+border-radius: var(--border-radius);
+padding: 20px;
+backdrop-filter: blur(10px);
+box-shadow: var(--shadow);
+z-index: 1001;
+transition: transform 0.3s ease;
+max-height: 80vh;
+overflow-y: auto;
+}
+
+.settings-panel.hidden {
+transform: translateX(400px);
+}
+
+.toggle-settings {
+position: fixed;
+top: 20px;
+right: 20px;
+width: 50px;
+height: 50px;
+border-radius: 50%;
+background: var(--primary-color);
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+z-index: 1002;
+font-size: 1.5rem;
+box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+transition: all 0.3s ease;
+}
+
+.toggle-settings:hover {
+transform: scale(1.1);
+}
+
+.settings-group {
+margin-bottom: 25px;
+padding-bottom: 15px;
+border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.settings-group:last-child {
+border-bottom: none;
+}
+
+h2 {
+font-size: 1.3rem;
+margin-bottom: 15px;
+color: var(--light-color);
+}
+
+.setting {
+margin-bottom: 15px;
+}
+
+label {
+display: block;
+margin-bottom: 5px;
+font-weight: 500;
+}
+
+input[type="range"] {
+width: 100%;
+}
+
+select, button {
+width: 100%;
+padding: 10px;
+border-radius: var(--border-radius);
+border: none;
+background: rgba(255, 255, 255, 0.2);
+color: var(--light-color);
+font-weight: 500;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+
+select:hover, button:hover {
+background: rgba(255, 255, 255, 0.3);
+}
+
+button {
+background: var(--primary-color);
+font-size: 1rem;
+margin-top: 10px;
+}
+
+button:hover {
+background: #3a76d8;
+transform: translateY(-2px);
+}
+
+.color-options {
+display: flex;
+gap: 10px;
+margin-top: 10px;
+}
+
+.color-option {
+width: 30px;
+height: 30px;
+border-radius: 50%;
+cursor: pointer;
+border: 2px solid transparent;
+transition: transform 0.2s ease;
+}
+
+.color-option:hover {
+transform: scale(1.1);
+}
+
+.color-option.active {
+border-color: var(--light-color);
+}
+
+.range-value {
+display: inline-block;
+width: 30px;
+text-align: right;
+}
+
+.reset-btn {
+background: #e74c3c;
+}
+
+.reset-btn:hover {
+background: #c0392b;
+}
+
+/* Стили для редактора анимаций */
+.animation-editor {
+display: flex;
+height: 100%;
+gap: 10px;
+}
+
+.animation-canvas {
+flex: 1;
+border: 1px solid #ccc;
+border-radius: 4px;
+position: relative;
+overflow: hidden;
+background: #f0f0f0;
+}
+
+.animation-timeline {
+height: 120px;
+border: 1px solid #ccc;
+border-radius: 4px;
+margin-top: 10px;
+padding: 10px;
+overflow-x: auto;
+background: #f9f9f9;
+}
+
+.animation-controls {
+display: flex;
+gap: 10px;
+margin: 10px 0;
+}
+
+.animation-properties {
+width: 250px;
+border: 1px solid #ccc;
+border-radius: 4px;
+padding: 10px;
+background: #f9f9f9;
+overflow-y: auto;
+}
+
+.keyframe {
+position: absolute;
+bottom: 10px;
+width: 12px;
+height: 12px;
+background: #4a86e8;
+border-radius: 50%;
+cursor: pointer;
+transform: translateX(-50%);
+}
+
+.keyframe.active {
+background: #ff5f57;
+transform: translateX(-50%) scale(1.3);
+}
+
+.keyframe-line {
+position: absolute;
+bottom: 15px;
+left: 0;
+width: 100%;
+height: 2px;
+background: #ccc;
+}
+
+.bone {
+position: absolute;
+background: #4a86e8;
+transform-origin: 0 50%;
+cursor: move;
+}
+
+.joint {
+position: absolute;
+width: 10px;
+height: 10px;
+background: #ff5f57;
+border-radius: 50%;
+cursor: pointer;
+transform: translate(-50%, -50%);
+}
+
+.joint.active {
+background: #28ca42;
+transform: translate(-50%, -50%) scale(1.3);
+}
+
+.timeline-track {
+height: 30px;
+margin-bottom: 5px;
+display: flex;
+align-items: center;
+border-bottom: 1px solid #eee;
+}
+
+.timeline-ruler {
+position: relative;
+height: 20px;
+margin-bottom: 10px;
+border-bottom: 1px solid #ccc;
+}
+
+.timeline-marker {
+position: absolute;
+bottom: 0;
+width: 1px;
+height: 100%;
+background: #ccc;
+}
+
+.timeline-marker.active {
+background: #4a86e8;
+width: 2px;
+}
+
+.timeline-marker::after {
+content: attr(data-time);
+position: absolute;
+top: -20px;
+left: 50%;
+transform: translateX(-50%);
+font-size: 10px;
+}
+
+.playhead {
+position: absolute;
+top: 0;
+width: 2px;
+height: 100%;
+background: #ff5f57;
+z-index: 10;
+}
+
+.property-row {
+display: flex;
+justify-content: space-between;
+margin-bottom: 8px;
+}
+
+.property-name {
+font-weight: bold;
+}
+
+.property-value {
+width: 60px;
+}
+
+/* Анимации окон */
+@keyframes windowAppear {
+from { opacity: 0; transform: scale(0.8) translateY(20px); }
+to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes windowDisappear {
+from { opacity: 1; transform: scale(1); }
+to { opacity: 0; transform: scale(0.8); }
+}
+
+.window {
+animation: windowAppear 0.4s ease;
+}
+
+.window.closing {
+animation: windowDisappear 0.3s ease forwards;
+}
+
+/* Анимации для разных стилей */
+.window.slide-in {
+animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+from { transform: translateX(100px); opacity: 0; }
+to { transform: translateX(0); opacity: 1; }
+}
+
+.window.bounce-in {
+animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+0% { transform: scale(0.3); opacity: 0; }
+50% { transform: scale(1.05); }
+70% { transform: scale(0.9); }
+100% { transform: scale(1); opacity: 1; }
+}
+
+.window.rotate-in {
+animation: rotateIn 0.5s ease;
+}
+
+@keyframes rotateIn {
+from { transform: rotate(-180deg) scale(0.3); opacity: 0; }
+to { transform: rotate(0) scale(1); opacity: 1; }
+}
+
+/* Эффекты для рабочего стола */
+.desktop-icon.dragging {
+opacity: 0.7;
+transform: scale(1.1);
+z-index: 999;
+}
+
+/* Оптимизация перетаскивания */
+.window.dragging {
+transition: none !important;
+}
+
+.desktop-icon.dragging {
+transition: none !important;
+}
+</style>
 </head>
 <body>
-    <div id="loading">Loading Virtual Linux...</div>
-    
-    <script>
-        // JavaScript функции для взаимодействия с C++
-        function launchApp(appName) {
-            Module.ccall('launchApp', null, ['string'], [appName]);
-        }
-        
-        function closeWindow(windowId) {
-            Module.ccall('closeWindow', null, ['number'], [windowId]);
-        }
-        
-        // Анимации
-        function animateWindow(element, animationType) {
-            switch(animationType) {
-                case 'fade':
-                    element.style.opacity = '0';
-                    element.style.transition = 'opacity 0.5s ease';
-                    setTimeout(() => element.style.opacity = '1', 50);
-                    break;
-                case 'slide':
-                    element.style.transform = 'translateY(-100px)';
-                    element.style.transition = 'transform 0.3s ease';
-                    setTimeout(() => element.style.transform = 'translateY(0)', 50);
-                    break;
-                case 'bounce':
-                    element.style.animation = 'bounce 0.5s ease';
-                    break;
-            }
-        }
-        
-        // Создание CSS анимаций
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes bounce {
-                0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-                40% {transform: translateY(-30px);}
-                60% {transform: translateY(-15px);}
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
-    
-    <script src="virtual-linux.js"></script>
+<div class="desktop" id="desktop">
+<!-- Окна будут добавляться сюда -->
+
+<!-- Иконки на рабочем столе -->
+<div class="desktop-icon" style="top: 40px; left: 40px;" data-app="fileManager">
+<div class="icon">📁</div>
+<span>Файлы</span>
+</div>
+
+<div class="desktop-icon" style="top: 40px; left: 140px;" data-app="textEditor">
+<div class="icon">📝</div>
+<span>Текстовый редактор</span>
+</div>
+
+<div class="desktop-icon" style="top: 160px; left: 40px;" data-app="browser">
+<div class="icon">🌐</div>
+<span>Браузер</span>
+</div>
+
+<div class="desktop-icon" style="top: 160px; left: 140px;" data-app="terminal">
+<div class="icon">💻</div>
+<span>Терминал</span>
+</div>
+
+<div class="desktop-icon" style="top: 280px; left: 40px;" data-app="mediaPlayer">
+<div class="icon">🎵</div>
+<span>Медиаплеер</span>
+</div>
+
+<div class="desktop-icon" style="top: 280px; left: 140px;" data-app="animationEditor">
+<div class="icon">✨</div>
+<span>Редактор анимаций</span>
+</div>
+</div>
+
+<div class="taskbar">
+<div class="app-icon active">🏠</div>
+<div class="app-icon" data-app="fileManager">📁</div>
+<div class="app-icon" data-app="textEditor">📝</div>
+<div class="app-icon" data-app="browser">🌐</div>
+<div class="app-icon" data-app="terminal">💻</div>
+<div class="app-icon" data-app="mediaPlayer">🎵</div>
+<div class="app-icon" data-app="animationEditor">✨</div>
+</div>
+
+<div class="toggle-settings" id="toggleSettings">⚙️</div>
+
+<div class="settings-panel" id="settingsPanel">
+<div class="settings-group">
+<h2>Внешний вид</h2>
+<div class="setting">
+<label for="background">Обои рабочего стола</label>
+<select id="background">
+<option value="nature1">Природа 1</option>
+<option value="nature2">Природа 2</option>
+<option value="abstract">Абстрактные</option>
+<option value="gradient">Градиент</option>
+<option value="space">Космос</option>
+</select>
+</div>
+<div class="setting">
+<label for="windowStyle">Стиль окон</label>
+<select id="windowStyle">
+<option value="rounded">Скруглённые углы</option>
+<option value="sharp">Прямые углы</option>
+<option value="transparent">Прозрачные</option>
+</select>
+</div>
+<div class="setting">
+<label>Цвет акцентов</label>
+<div class="color-options">
+<div class="color-option active" style="background-color: #4a86e8;" data-color="#4a86e8"></div>
+<div class="color-option" style="background-color: #6aa84f;" data-color="#6aa84f"></div>
+<div class="color-option" style="background-color: #e69138;" data-color="#e69138"></div>
+<div class="color-option" style="background-color: #cc0000;" data-color="#cc0000"></div>
+<div class="color-option" style="background-color: #674ea7;" data-color="#674ea7"></div>
+</div>
+</div>
+</div>
+
+<div class="settings-group">
+<h2>Анимации окон</h2>
+<div class="setting">
+<label for="openAnimation">Анимация открытия</label>
+<select id="openAnimation">
+<option value="default">По умолчанию</option>
+<option value="slide">Скольжение</option>
+<option value="bounce">Пружина</option>
+<option value="rotate">Вращение</option>
+<option value="none">Без анимации</option>
+</select>
+</div>
+<div class="setting">
+<label for="closeAnimation">Анимация закрытия</label>
+<select id="closeAnimation">
+<option value="default">По умолчанию</option>
+<option value="slide">Скольжение</option>
+<option value="scale">Уменьшение</option>
+<option value="none">Без анимации</option>
+</select>
+</div>
+<div class="setting">
+<label for="animationSpeed">Скорость анимации: <span class="range-value" id="speedValue">5</span></label>
+<input type="range" id="animationSpeed" min="1" max="10" value="5">
+</div>
+<div class="setting">
+<label for="animationEasing">Стиль анимации</label>
+<select id="animationEasing">
+<option value="ease">Плавно</option>
+<option value="ease-in">Ускорение</option>
+<option value="ease-out">Замедление</option>
+<option value="ease-in-out">Ускорение и замедление</option>
+<option value="linear">Линейно</option>
+</select>
+</div>
+</div>
+
+<div class="settings-group">
+<h2>Поведение окон</h2>
+<div class="setting">
+<label for="windowShadow">Тень окон: <span class="range-value" id="shadowValue">5</span></label>
+<input type="range" id="windowShadow" min="0" max="10" value="5">
+</div>
+<div class="setting">
+<label for="windowOpacity">Прозрачность окон: <span class="range-value" id="opacityValue">95%</span></label>
+<input type="range" id="windowOpacity" min="50" max="100" value="95">
+</div>
+<div class="setting">
+<label>
+<input type="checkbox" id="snapToGrid"> Привязка к сетке
+</label>
+</div>
+<div class="setting">
+<label>
+<input type="checkbox" id="freeDrag" checked> Свободное перетаскивание
+</label>
+</div>
+</div>
+
+<div class="settings-group">
+<h2>Приложения</h2>
+<div class="setting">
+<label for="appToOpen">Открыть приложение</label>
+<select id="appToOpen">
+<option value="fileManager">Файловый менеджер</option>
+<option value="textEditor">Текстовый редактор</option>
+<option value="browser">Веб-браузер</option>
+<option value="terminal">Терминал</option>
+<option value="mediaPlayer">Медиаплеер</option>
+<option value="animationEditor">Редактор анимаций</option>
+</select>
+</div>
+<button id="openApp">Открыть приложение</button>
+<button id="closeAll">Закрыть все окна</button>
+</div>
+
+<button class="reset-btn" id="resetSettings">Сбросить настройки</button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Элементы DOM
+const desktop = document.getElementById('desktop');
+const settingsPanel = document.getElementById('settingsPanel');
+const toggleSettings = document.getElementById('toggleSettings');
+const backgroundSelect = document.getElementById('background');
+const windowStyleSelect = document.getElementById('windowStyle');
+const colorOptions = document.querySelectorAll('.color-option');
+const openAnimation = document.getElementById('openAnimation');
+const closeAnimation = document.getElementById('closeAnimation');
+const animationSpeed = document.getElementById('animationSpeed');
+const animationEasing = document.getElementById('animationEasing');
+const windowShadow = document.getElementById('windowShadow');
+const windowOpacity = document.getElementById('windowOpacity');
+const snapToGrid = document.getElementById('snapToGrid');
+const freeDrag = document.getElementById('freeDrag');
+const appToOpen = document.getElementById('appToOpen');
+const openAppBtn = document.getElementById('openApp');
+const closeAllBtn = document.getElementById('closeAll');
+const resetSettingsBtn = document.getElementById('resetSettings');
+const appIcons = document.querySelectorAll('.app-icon');
+const desktopIcons = document.querySelectorAll('.desktop-icon');
+
+// Значения ползунков
+const speedValue = document.getElementById('speedValue');
+const shadowValue = document.getElementById('shadowValue');
+const opacityValue = document.getElementById('opacityValue');
+
+// Переменные для хранения состояния
+let zIndex = 1;
+let activeColor = '#4a86e8';
+let windows = [];
+let isDragging = false;
+let dragOffsetX, dragOffsetY;
+let currentDraggedWindow = null;
+
+// Переменные для редактора анимаций
+let currentAnimation = {
+name: 'Новая анимация',
+duration: 5,
+keyframes: [],
+bones: [],
+currentTime: 0,
+isPlaying: false
+};
+
+let selectedBone = null;
+let selectedJoint = null;
+
+// Переключение панели настроек
+toggleSettings.addEventListener('click', function() {
+settingsPanel.classList.toggle('hidden');
+});
+
+// Обновление значений ползунков
+animationSpeed.addEventListener('input', function() {
+speedValue.textContent = this.value;
+updateAnimationSpeed();
+});
+
+windowShadow.addEventListener('input', function() {
+shadowValue.textContent = this.value;
+updateWindowShadow();
+});
+
+windowOpacity.addEventListener('input', function() {
+opacityValue.textContent = this.value + '%';
+updateWindowOpacity();
+});
+
+// Смена обоев
+backgroundSelect.addEventListener('change', function() {
+applyBackground(this.value);
+});
+
+// Смена стиля окон
+windowStyleSelect.addEventListener('change', function() {
+applyWindowStyle(this.value);
+});
+
+// Выбор цвета
+colorOptions.forEach(option => {
+option.addEventListener('click', function() {
+colorOptions.forEach(opt => opt.classList.remove('active'));
+this.classList.add('active');
+activeColor = this.getAttribute('data-color');
+applyAccentColor(activeColor);
+});
+});
+
+// Открытие приложения
+openAppBtn.addEventListener('click', function() {
+openApplication(appToOpen.value);
+});
+
+// Закрытие всех окон
+closeAllBtn.addEventListener('click', function() {
+closeAllWindows();
+});
+
+// Сброс настроек
+resetSettingsBtn.addEventListener('click', function() {
+resetSettings();
+});
+
+// Открытие приложения по клику на иконку
+appIcons.forEach(icon => {
+if (icon.classList.contains('active')) return; // Пропускаем иконку домашнего экрана
+icon.addEventListener('click', function() {
+const app = this.getAttribute('data-app');
+openApplication(app);
+});
+});
+
+// Открытие приложения по двойному клику на иконку рабочего стола
+desktopIcons.forEach(icon => {
+// Двойной клик для открытия
+icon.addEventListener('dblclick', function() {
+const app = this.getAttribute('data-app');
+openApplication(app);
+});
+
+// Перетаскивание иконок рабочего стола
+makeIconDraggable(icon);
+});
+
+// Функции применения настроек
+function applyBackground(background) {
+let bgImage = '';
+switch(background) {
+case 'nature1':
+bgImage = 'url("https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80")';
+break;
+case 'nature2':
+bgImage = 'url("https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80")';
+break;
+case 'abstract':
+bgImage = 'url("https://images.unsplash.com/photo-1550684376-efcbd6e3f031?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80")';
+break;
+case 'gradient':
+desktop.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+return;
+case 'space':
+bgImage = 'url("https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80")';
+break;
+default:
+bgImage = 'url("https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80")';
+}
+desktop.style.backgroundImage = bgImage;
+}
+
+function applyWindowStyle(style) {
+const windows = document.querySelectorAll('.window');
+windows.forEach(window => {
+window.style.borderRadius = style === 'sharp' ? '0' : '8px';
+window.style.backdropFilter = style === 'transparent' ? 'blur(10px)' : 'none';
+window.style.background = style === 'transparent' ? 
+'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.95)';
+});
+}
+
+function applyAccentColor(color) {
+document.documentElement.style.setProperty('--primary-color', color);
+const windowHeaders = document.querySelectorAll('.window-header');
+windowHeaders.forEach(header => {
+header.style.background = color;
+});
+}
+
+function updateAnimationSpeed() {
+const value = animationSpeed.value;
+const duration = (value / 10) + 's';
+document.documentElement.style.setProperty('--animation-duration', duration);
+const windows = document.querySelectorAll('.window');
+windows.forEach(window => {
+window.style.transitionDuration = duration;
+});
+}
+
+function updateWindowShadow() {
+const value = windowShadow.value;
+const intensity = value * 3;
+const windows = document.querySelectorAll('.window');
+windows.forEach(window => {
+window.style.boxShadow = `0 ${value}px ${intensity}px rgba(0, 0, 0, 0.4)`;
+});
+}
+
+function updateWindowOpacity() {
+const value = windowOpacity.value;
+const windows = document.querySelectorAll('.window');
+windows.forEach(window => {
+window.style.opacity = value / 100;
+});
+}
+
+// Функции для работы с окнами
+function openApplication(appType) {
+zIndex++;
+
+// Создание нового окна
+const window = document.createElement('div');
+window.className = 'window';
+window.style.zIndex = zIndex;
+
+// Применение анимации открытия
+const animationType = openAnimation.value;
+if (animationType !== 'none') {
+window.classList.add(animationType + '-in');
+}
+
+// Позиционирование окна
+const left = 100 + (windows.length * 30);
+const top = 100 + (windows.length * 30);
+window.style.left = left + 'px';
+window.style.top = top + 'px';
+window.style.width = '500px';
+window.style.height = '400px';
+
+// Заголовок окна
+const windowHeader = document.createElement('div');
+windowHeader.className = 'window-header';
+windowHeader.style.background = activeColor;
+windowHeader.innerHTML = `
+<div class="window-title">${getAppTitle(appType)}</div>
+<div class="window-controls">
+<div class="window-control minimize"></div>
+<div class="window-control maximize"></div>
+<div class="window-control close"></div>
+</div>
+`;
+
+// Содержимое окна
+const windowContent = document.createElement('div');
+windowContent.className = 'window-content';
+windowContent.innerHTML = getAppContent(appType);
+
+window.appendChild(windowHeader);
+window.appendChild(windowContent);
+desktop.appendChild(window);
+
+// Добавление окна в массив
+windows.push({
+element: window,
+type: appType,
+minimized: false,
+maximized: false
+});
+
+// Сделать окно перетаскиваемым (оптимизированная версия)
+makeWindowDraggable(window, windowHeader);
+
+// Добавление обработчиков для кнопок управления окном
+const closeBtn = windowHeader.querySelector('.close');
+const minimizeBtn = windowHeader.querySelector('.minimize');
+const maximizeBtn = windowHeader.querySelector('.maximize');
+
+closeBtn.addEventListener('click', function(e) {
+e.stopPropagation();
+closeWindow(window);
+});
+
+minimizeBtn.addEventListener('click', function(e) {
+e.stopPropagation();
+minimizeWindow(window);
+});
+
+maximizeBtn.addEventListener('click', function(e) {
+e.stopPropagation();
+toggleMaximizeWindow(window);
+});
+
+// Применение текущих настроек к новому окну
+applyCurrentSettingsToWindow(window);
+
+// Активация окна при клике
+window.addEventListener('mousedown', function() {
+bringToFront(window);
+});
+
+// Удаление класса анимации после её завершения
+setTimeout(() => {
+window.classList.remove(animationType + '-in');
+}, 500);
+}
+
+function closeWindow(window) {
+const animationType = closeAnimation.value;
+if (animationType !== 'none') {
+window.classList.add('closing');
+setTimeout(() => {
+removeWindowFromArray(window);
+window.remove();
+}, 300);
+} else {
+removeWindowFromArray(window);
+window.remove();
+}
+}
+
+function removeWindowFromArray(window) {
+const index = windows.findIndex(w => w.element === window);
+if (index !== -1) {
+windows.splice(index, 1);
+}
+}
+
+function closeAllWindows() {
+windows.forEach(w => {
+if (closeAnimation.value !== 'none') {
+w.element.classList.add('closing');
+setTimeout(() => w.element.remove(), 300);
+} else {
+w.element.remove();
+}
+});
+windows = [];
+}
+
+function minimizeWindow(window) {
+const win = windows.find(w => w.element === window);
+if (win) {
+win.minimized = !win.minimized;
+if (win.minimized) {
+window.classList.add('minimized');
+} else {
+window.classList.remove('minimized');
+bringToFront(window);
+window.style.display = 'flex';
+// Добавляем анимацию появления
+window.classList.add('bounce-in');
+setTimeout(() => window.classList.remove('bounce-in'), 500);
+}
+}
+}
+
+function toggleMaximizeWindow(window) {
+const win = windows.find(w => w.element === window);
+if (win) {
+win.maximized = !win.maximized;
+if (win.maximized) {
+window.classList.add('maximized');
+} else {
+window.classList.remove('maximized');
+// Восстанавливаем предыдущий размер и позицию
+window.style.width = '500px';
+window.style.height = '400px';
+window.style.left = '100px';
+window.style.top = '100px';
+}
+}
+}
+
+function bringToFront(window) {
+zIndex++;
+window.style.zIndex = zIndex;
+}
+
+// Оптимизированная функция перетаскивания окон
+function makeWindowDraggable(element, handle) {
+let isDragging = false;
+let startX, startY, initialLeft, initialTop;
+
+handle.addEventListener('mousedown', startDrag);
+
+function startDrag(e) {
+e.preventDefault();
+isDragging = true;
+startX = e.clientX;
+startY = e.clientY;
+initialLeft = parseInt(element.style.left) || 0;
+initialTop = parseInt(element.style.top) || 0;
+
+// Отключаем переходы во время перетаскивания для повышения производительности
+element.classList.add('dragging');
+
+document.addEventListener('mousemove', drag);
+document.addEventListener('mouseup', stopDrag);
+
+// Поднимаем окно на передний план
+bringToFront(element);
+}
+
+function drag(e) {
+if (!isDragging) return;
+
+const deltaX = e.clientX - startX;
+const deltaY = e.clientY - startY;
+
+let newX = initialLeft + deltaX;
+let newY = initialTop + deltaY;
+
+// Привязка к сетке, если включена
+if (snapToGrid.checked && !freeDrag.checked) {
+const gridSize = 20;
+newX = Math.round(newX / gridSize) * gridSize;
+newY = Math.round(newY / gridSize) * gridSize;
+}
+
+// Ограничение перемещения в пределах экрана
+newX = Math.max(0, Math.min(newX, window.innerWidth - element.offsetWidth));
+newY = Math.max(0, Math.min(newY, window.innerHeight - element.offsetHeight));
+
+// Применяем новые координаты напрямую, без переходов
+element.style.left = newX + 'px';
+element.style.top = newY + 'px';
+}
+
+function stopDrag() {
+isDragging = false;
+// Восстанавливаем переходы после перетаскивания
+setTimeout(() => element.classList.remove('dragging'), 10);
+
+document.removeEventListener('mousemove', drag);
+document.removeEventListener('mouseup', stopDrag);
+}
+}
+
+// Оптимизированная функция перетаскивания иконок
+function makeIconDraggable(icon) {
+let isDragging = false;
+let startX, startY, initialLeft, initialTop;
+
+icon.addEventListener('mousedown', startDrag);
+
+function startDrag(e) {
+e.preventDefault();
+isDragging = true;
+startX = e.clientX;
+startY = e.clientY;
+initialLeft = parseInt(icon.style.left) || 0;
+initialTop = parseInt(icon.style.top) || 0;
+
+icon.classList.add('dragging');
+
+document.addEventListener('mousemove', drag);
+document.addEventListener('mouseup', stopDrag);
+}
+
+function drag(e) {
+if (!isDragging) return;
+
+const deltaX = e.clientX - startX;
+const deltaY = e.clientY - startY;
+
+const newX = initialLeft + deltaX;
+const newY = initialTop + deltaY;
+
+// Ограничение перемещения в пределах рабочего стола
+const maxX = window.innerWidth - icon.offsetWidth;
+const maxY = window.innerHeight - icon.offsetHeight - 100; // Учитываем панель задач
+
+icon.style.left = Math.max(10, Math.min(newX, maxX)) + 'px';
+icon.style.top = Math.max(10, Math.min(newY, maxY)) + 'px';
+}
+
+function stopDrag() {
+isDragging = false;
+setTimeout(() => icon.classList.remove('dragging'), 10);
+
+document.removeEventListener('mousemove', drag);
+document.removeEventListener('mouseup', stopDrag);
+}
+}
+
+function applyCurrentSettingsToWindow(window) {
+// Применение текущих настроек к конкретному окну
+const style = windowStyleSelect.value;
+window.style.borderRadius = style === 'sharp' ? '0' : '8px';
+window.style.backdropFilter = style === 'transparent' ? 'blur(10px)' : 'none';
+window.style.background = style === 'transparent' ? 
+'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.95)';
+
+const shadowValue = windowShadow.value;
+const intensity = shadowValue * 3;
+window.style.boxShadow = `0 ${shadowValue}px ${intensity}px rgba(0, 0, 0, 0.4)`;
+
+const opacityValue = windowOpacity.value;
+window.style.opacity = opacityValue / 100;
+
+const header = window.querySelector('.window-header');
+header.style.background = activeColor;
+
+// Применение стиля анимации
+const easing = animationEasing.value;
+window.style.transitionTimingFunction = easing;
+}
+
+function getAppTitle(appType) {
+switch(appType) {
+case 'fileManager': return 'Файловый менеджер';
+case 'textEditor': return 'Текстовый редактор';
+case 'browser': return 'Веб-браузер';
+case 'terminal': return 'Терминал';
+case 'mediaPlayer': return 'Медиаплеер';
+case 'animationEditor': return 'Редактор анимаций';
+default: return 'Приложение';
+}
+}
+
+function getAppContent(appType) {
+switch(appType) {
+case 'fileManager':
+return `
+<h3>Домашняя папка</h3>
+<ul>
+<li>📁 Документы</li>
+<li>📁 Изображения</li>
+<li>📁 Музыка</li>
+<li>📁 Видео</li>
+<li>📁 Загрузки</li>
+</ul>
+<p>Используется: 15.2 ГБ из 250 ГБ</p>
+`;
+
+case 'textEditor':
+return `
+<h3>Новый документ.txt</h3>
+<textarea style="width: 100%; height: 200px; border: 1px solid #ccc; padding: 10px; border-radius: 4px;">
+Добро пожаловать в текстовый редактор!
+
+Здесь вы можете создавать и редактировать текстовые файлы.
+
+Функции:
+- Сохранение файлов
+- Подсветка синтаксиса
+- Поиск и замена
+</textarea>
+<div style="margin-top: 10px;">
+<button style="padding: 5px 10px; margin-right: 10px;">Сохранить</button>
+<button style="padding: 5px 10px;">Открыть</button>
+</div>
+`;
+
+case 'browser':
+return `
+<div style="display: flex; margin-bottom: 10px;">
+<button style="margin-right: 5px;">←</button>
+<button style="margin-right: 5px;">→</button>
+<input type="text" value="https://example.com" style="flex-grow: 1; padding: 5px;">
+<button style="margin-left: 5px;">↻</button>
+</div>
+<div style="background: white; height: 250px; padding: 10px; border: 1px solid #ccc;">
+<h3>Добро пожаловать в веб-браузер</h3>
+<p>Это демонстрационная страница браузера.</p>
+<p>В реальном приложении здесь отображался бы веб-сайт.</p>
+</div>
+`;
+
+case 'terminal':
+return `
+<div style="background: #1e1e1e; color: #00ff00; height: 250px; padding: 10px; font-family: monospace; overflow-y: auto;">
+<div>user@linux-desktop:~$ welcome</div>
+<div>Добро пожаловать в терминал!</div>
+<div>Это эмулятор командной строки Linux.</div>
+<br>
+<div>user@linux-desktop:~$ <span style="background: #00ff00; color: #1e1e1e;">_</span></div>
+</div>
+`;
+
+case 'mediaPlayer':
+return `
+<h3>Медиаплеер</h3>
+<div style="text-align: center; margin: 20px 0;">
+<div style="width: 200px; height: 150px; background: #333; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: white;">
+Видеоплеер
+</div>
+</div>
+<div style="display: flex; justify-content: center; align-items: center;">
+<button style="margin: 0 5px;">⏮</button>
+<button style="margin: 0 5px;">⏯</button>
+<button style="margin: 0 5px;">⏭</button>
+</div>
+<div style="margin-top: 10px;">
+<div>Трек: Демонстрационная композиция</div>
+<div>Исполнитель: Виртуальный оркестр</div>
+<div>Альбом: Тестовые данные</div>
+</div>
+`;
+
+case 'animationEditor':
+return createAnimationEditorContent();
+
+default:
+return '<p>Содержимое приложения</p>';
+}
+}
+
+// Функции для редактора анимаций
+function createAnimationEditorContent() {
+return `
+<div class="animation-editor">
+<div class="animation-properties">
+<h3>Свойства анимации</h3>
+<div class="property-row">
+<span class="property-name">Название:</span>
+<input type="text" class="property-value" value="Новая анимация" id="animName">
+</div>
+<div class="property-row">
+<span class="property-name">Длительность:</span>
+<input type="number" class="property-value" value="5" id="animDuration"> с
+</div>
+<div class="property-row">
+<span class="property-name">FPS:</span>
+<input type="number" class="property-value" value="24" id="animFps">
+</div>
+<button id="addBone">Добавить кость</button>
+<button id="addKeyframe">Добавить ключевой кадр</button>
+<button id="playAnimation">▶ Воспроизвести</button>
+<button id="stopAnimation">⏹ Остановить</button>
+</div>
+<div style="flex: 1; display: flex; flex-direction: column;">
+<div class="animation-canvas" id="animationCanvas">
+<div class="bone" style="left: 100px; top: 100px; width: 100px; height: 10px; transform: rotate(0deg);"></div>
+<div class="joint" style="left: 100px; top: 100px;"></div>
+<div class="joint" style="left: 200px; top: 100px;"></div>
+</div>
+<div class="animation-timeline" id="animationTimeline">
+<div class="timeline-ruler" id="timelineRuler"></div>
+<div class="playhead" id="playhead" style="left: 0px;"></div>
+<div class="keyframe-line"></div>
+</div>
+<div class="animation-controls">
+<input type="range" id="timelineSlider" min="0" max="100" value="0" style="flex: 1;">
+<span id="currentTime">0.0s</span>
+</div>
+</div>
+</div>
+`;
+}
+
+function initAnimationEditor(window) {
+const canvas = window.querySelector('#animationCanvas');
+const timeline = window.querySelector('#animationTimeline');
+const ruler = window.querySelector('#timelineRuler');
+const playhead = window.querySelector('#playhead');
+const slider = window.querySelector('#timelineSlider');
+const currentTime = window.querySelector('#currentTime');
+const addBoneBtn = window.querySelector('#addBone');
+const addKeyframeBtn = window.querySelector('#addKeyframe');
+const playBtn = window.querySelector('#playAnimation');
+const stopBtn = window.querySelector('#stopAnimation');
+const animName = window.querySelector('#animName');
+const animDuration = window.querySelector('#animDuration');
+const animFps = window.querySelector('#animFps');
+
+// Инициализация временной шкалы
+updateTimelineRuler();
+
+// Обработчики событий
+addBoneBtn.addEventListener('click', addBone);
+addKeyframeBtn.addEventListener('click', addKeyframe);
+playBtn.addEventListener('click', playAnimation);
+stopBtn.addEventListener('click', stopAnimation);
+slider.addEventListener('input', updatePlayhead);
+
+// Обновление имени и длительности анимации
+animName.addEventListener('change', function() {
+currentAnimation.name = this.value;
+});
+
+animDuration.addEventListener('change', function() {
+currentAnimation.duration = parseFloat(this.value);
+updateTimelineRuler();
+});
+
+// Функции редактора анимаций
+function addBone() {
+const bone = document.createElement('div');
+bone.className = 'bone';
+bone.style.left = '150px';
+bone.style.top = '150px';
+bone.style.width = '80px';
+bone.style.height = '8px';
+bone.style.transform = 'rotate(0deg)';
+bone.style.backgroundColor = getRandomColor();
+
+const joint1 = document.createElement('div');
+joint1.className = 'joint';
+joint1.style.left = '150px';
+joint1.style.top = '150px';
+
+const joint2 = document.createElement('div');
+joint2.className = 'joint';
+joint2.style.left = '230px';
+joint2.style.top = '150px';
+
+canvas.appendChild(bone);
+canvas.appendChild(joint1);
+canvas.appendChild(joint2);
+
+// Добавляем обработчики для перемещения суставов
+makeJointDraggable(joint1, bone, null, joint2);
+makeJointDraggable(joint2, bone, joint1, null);
+
+currentAnimation.bones.push({
+element: bone,
+joints: [joint1, joint2],
+keyframes: []
+});
+}
+
+function addKeyframe() {
+if (currentAnimation.bones.length === 0) {
+alert('Сначала добавьте кость!');
+return;
+}
+
+const time = parseFloat(slider.value) / 100 * currentAnimation.duration;
+const keyframe = {
+time: time,
+boneStates: []
+};
+
+currentAnimation.bones.forEach(boneData => {
+const bone = boneData.element;
+const rect = bone.getBoundingClientRect();
+const canvasRect = canvas.getBoundingClientRect();
+
+const boneState = {
+boneId: currentAnimation.bones.indexOf(boneData),
+x: rect.left - canvasRect.left,
+y: rect.top - canvasRect.top,
+rotation: getRotationFromTransform(bone.style.transform),
+length: parseInt(bone.style.width)
+};
+
+keyframe.boneStates.push(boneState);
+});
+
+currentAnimation.keyframes.push(keyframe);
+updateTimeline();
+}
+
+function playAnimation() {
+if (currentAnimation.isPlaying) return;
+
+currentAnimation.isPlaying = true;
+playBtn.disabled = true;
+const startTime = Date.now();
+const duration = currentAnimation.duration * 1000;
+
+function animate() {
+if (!currentAnimation.isPlaying) return;
+
+const elapsed = Date.now() - startTime;
+const progress = Math.min(elapsed / duration, 1);
+
+updateAnimation(progress);
+
+if (progress < 1) {
+requestAnimationFrame(animate);
+} else {
+stopAnimation();
+}
+}
+
+requestAnimationFrame(animate);
+}
+
+function stopAnimation() {
+currentAnimation.isPlaying = false;
+playBtn.disabled = false;
+}
+
+function updateAnimation(progress) {
+const time = progress * currentAnimation.duration;
+currentAnimation.currentTime = time;
+
+// Обновляем ползунок и время
+slider.value = progress * 100;
+currentTime.textContent = time.toFixed(1) + 's';
+
+// Обновляем позицию плейхеда
+const timelineWidth = timeline.offsetWidth;
+playhead.style.left = (progress * timelineWidth) + 'px';
+
+// Интерполяция между ключевыми кадрами
+interpolateBones(time);
+}
+
+function interpolateBones(time) {
+// Находим соседние ключевые кадры
+const keyframes = currentAnimation.keyframes.sort((a, b) => a.time - b.time);
+let prevFrame = null;
+let nextFrame = null;
+
+for (let i = 0; i < keyframes.length; i++) {
+if (keyframes[i].time <= time) {
+prevFrame = keyframes[i];
+}
+if (keyframes[i].time >= time) {
+nextFrame = keyframes[i];
+break;
+}
+}
+
+if (!prevFrame && !nextFrame) return;
+if (!prevFrame) prevFrame = nextFrame;
+if (!nextFrame) nextFrame = prevFrame;
+
+if (prevFrame === nextFrame) {
+// Применяем один ключевой кадр
+applyKeyframe(prevFrame);
+} else {
+// Интерполируем между ключевыми кадрами
+const t = (time - prevFrame.time) / (nextFrame.time - prevFrame.time);
+interpolateKeyframes(prevFrame, nextFrame, t);
+}
+}
+
+function applyKeyframe(keyframe) {
+keyframe.boneStates.forEach(state => {
+const boneData = currentAnimation.bones[state.boneId];
+if (boneData) {
+const bone = boneData.element;
+bone.style.left = state.x + 'px';
+bone.style.top = state.y + 'px';
+bone.style.transform = `rotate(${state.rotation}deg)`;
+bone.style.width = state.length + 'px';
+
+// Обновляем позиции суставов
+const joint1 = boneData.joints[0];
+const joint2 = boneData.joints[1];
+
+joint1.style.left = state.x + 'px';
+joint1.style.top = state.y + 'px';
+
+const endX = state.x + Math.cos(state.rotation * Math.PI / 180) * state.length;
+const endY = state.y + Math.sin(state.rotation * Math.PI / 180) * state.length;
+
+joint2.style.left = endX + 'px';
+joint2.style.top = endY + 'px';
+}
+});
+}
+
+function interpolateKeyframes(prevFrame, nextFrame, t) {
+prevFrame.boneStates.forEach((prevState, index) => {
+const nextState = nextFrame.boneStates[index];
+if (!nextState) return;
+
+const boneData = currentAnimation.bones[prevState.boneId];
+if (!boneData) return;
+
+const bone = boneData.element;
+
+// Интерполяция позиции и вращения
+const x = prevState.x + (nextState.x - prevState.x) * t;
+const y = prevState.y + (nextState.y - prevState.y) * t;
+const rotation = prevState.rotation + (nextState.rotation - prevState.rotation) * t;
+const length = prevState.length + (nextState.length - prevState.length) * t;
+
+bone.style.left = x + 'px';
+bone.style.top = y + 'px';
+bone.style.transform = `rotate(${rotation}deg)`;
+bone.style.width = length + 'px';
+
+// Обновляем позиции суставов
+const joint1 = boneData.joints[0];
+const joint2 = boneData.joints[1];
+
+joint1.style.left = x + 'px';
+joint1.style.top = y + 'px';
+
+const endX = x + Math.cos(rotation * Math.PI / 180) * length;
+const endY = y + Math.sin(rotation * Math.PI / 180) * length;
+
+joint2.style.left = endX + 'px';
+joint2.style.top = endY + 'px';
+});
+}
+
+function updateTimelineRuler() {
+ruler.innerHTML = '';
+const width = ruler.offsetWidth;
+const duration = currentAnimation.duration;
+const step = duration / 10;
+
+for (let i = 0; i <= 10; i++) {
+const time = i * step;
+const position = (time / duration) * width;
+
+const marker = document.createElement('div');
+marker.className = 'timeline-marker';
+marker.style.left = position + 'px';
+marker.setAttribute('data-time', time.toFixed(1) + 's');
+
+ruler.appendChild(marker);
+}
+}
+
+function updateTimeline() {
+// Очищаем существующие ключевые кадры
+const existingKeyframes = timeline.querySelectorAll('.keyframe');
+existingKeyframes.forEach(kf => kf.remove());
+
+// Добавляем ключевые кадры на временную шкалу
+currentAnimation.keyframes.forEach(keyframe => {
+const position = (keyframe.time / currentAnimation.duration) * timeline.offsetWidth;
+
+const keyframeElement = document.createElement('div');
+keyframeElement.className = 'keyframe';
+keyframeElement.style.left = position + 'px';
+keyframeElement.setAttribute('data-time', keyframe.time);
+
+keyframeElement.addEventListener('click', function() {
+// Удаляем активный класс у всех ключевых кадров
+timeline.querySelectorAll('.keyframe').forEach(kf => kf.classList.remove('active'));
+this.classList.add('active');
+
+// Устанавливаем время на выбранный ключевой кадр
+slider.value = (keyframe.time / currentAnimation.duration) * 100;
+updatePlayhead();
+});
+
+timeline.appendChild(keyframeElement);
+});
+}
+
+function updatePlayhead() {
+const progress = slider.value / 100;
+const time = progress * currentAnimation.duration;
+currentTime.textContent = time.toFixed(1) + 's';
+
+const timelineWidth = timeline.offsetWidth;
+playhead.style.left = (progress * timelineWidth) + 'px';
+
+if (!currentAnimation.isPlaying) {
+updateAnimation(progress);
+}
+}
+
+function makeJointDraggable(joint, bone, prevJoint, nextJoint) {
+let isDragging = false;
+let startX, startY, initialLeft, initialTop;
+
+joint.addEventListener('mousedown', startDrag);
+
+function startDrag(e) {
+e.preventDefault();
+e.stopPropagation();
+isDragging = true;
+startX = e.clientX;
+startY = e.clientY;
+
+initialLeft = parseInt(joint.style.left) || 0;
+initialTop = parseInt(joint.style.top) || 0;
+
+document.addEventListener('mousemove', drag);
+document.addEventListener('mouseup', stopDrag);
+
+// Помечаем сустав как активный
+joint.classList.add('active');
+}
+
+function drag(e) {
+if (!isDragging) return;
+
+const deltaX = e.clientX - startX;
+const deltaY = e.clientY - startY;
+
+const newX = initialLeft + deltaX;
+const newY = initialTop + deltaY;
+
+// Обновляем позицию сустава
+joint.style.left = newX + 'px';
+joint.style.top = newY + 'px';
+
+// Обновляем кость
+updateBonePosition(bone, prevJoint, nextJoint);
+}
+
+function stopDrag() {
+isDragging = false;
+document.removeEventListener('mousemove', drag);
+document.removeEventListener('mouseup', stopDrag);
+
+// Снимаем отметку активности
+joint.classList.remove('active');
+}
+
+function updateBonePosition(bone, prevJoint, nextJoint) {
+if (prevJoint) {
+// Это второй сустав - обновляем длину и угол кости
+const prevX = parseInt(prevJoint.style.left) || 0;
+const prevY = parseInt(prevJoint.style.top) || 0;
+const currentX = parseInt(joint.style.left) || 0;
+const currentY = parseInt(joint.style.top) || 0;
+
+const dx = currentX - prevX;
+const dy = currentY - prevY;
+const length = Math.sqrt(dx * dx + dy * dy);
+const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+bone.style.left = prevX + 'px';
+bone.style.top = prevY + 'px';
+bone.style.width = length + 'px';
+bone.style.transform = `rotate(${angle}deg)`;
+} else if (nextJoint) {
+// Это первый сустав - перемещаем всю кость
+const nextX = parseInt(nextJoint.style.left) || 0;
+const nextY = parseInt(nextJoint.style.top) || 0;
+
+const dx = nextX - newX;
+const dy = nextY - newY;
+const length = Math.sqrt(dx * dx + dy * dy);
+const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+bone.style.left = newX + 'px';
+bone.style.top = newY + 'px';
+bone.style.width = length + 'px';
+bone.style.transform = `rotate(${angle}deg)`;
+
+// Обновляем позицию следующего сустава
+nextJoint.style.left = (newX + dx) + 'px';
+nextJoint.style.top = (newY + dy) + 'px';
+}
+}
+}
+
+function getRotationFromTransform(transform) {
+const match = transform.match(/rotate\(([^)]+)deg\)/);
+return match ? parseFloat(match[1]) : 0;
+}
+
+function getRandomColor() {
+const colors = ['#4a86e8', '#6aa84f', '#e69138', '#cc0000', '#674ea7', '#a64d79', '#45818e'];
+return colors[Math.floor(Math.random() * colors.length)];
+}
+}
+
+function resetSettings() {
+// Сброс всех настроек к значениям по умолчанию
+backgroundSelect.value = 'nature1';
+windowStyleSelect.value = 'rounded';
+openAnimation.value = 'default';
+closeAnimation.value = 'default';
+animationSpeed.value = 5;
+animationEasing.value = 'ease';
+windowShadow.value = 5;
+windowOpacity.value = 95;
+snapToGrid.checked = false;
+freeDrag.checked = true;
+
+// Сброс цвета
+colorOptions.forEach(opt => opt.classList.remove('active'));
+colorOptions[0].classList.add('active');
+activeColor = '#4a86e8';
+
+// Обновление отображения значений
+speedValue.textContent = '5';
+shadowValue.textContent = '5';
+opacityValue.textContent = '95%';
+
+// Применение сброшенных настроек
+applyBackground('nature1');
+applyWindowStyle('rounded');
+applyAccentColor(activeColor);
+updateAnimationSpeed();
+updateWindowShadow();
+updateWindowOpacity();
+
+// Установка стиля анимации
+document.documentElement.style.setProperty('--animation-timing', 'ease');
+}
+
+// Инициализация при загрузке
+applyAccentColor(activeColor);
+updateAnimationSpeed();
+updateWindowShadow();
+updateWindowOpacity();
+
+// Установка начального стиля анимации
+document.documentElement.style.setProperty('--animation-timing', 'ease');
+});
+
+// Блокировка стандартного поведения F11 и переключение полноэкранного режима
+document.addEventListener('keydown', function(e) {
+if (e.key === 'F11') {
+e.preventDefault(); // Блокируем стандартное поведение F11
+if (!document.fullscreenElement) {
+// Вход в полноэкранный режим
+document.documentElement.requestFullscreen().catch(err => {
+console.log('Ошибка полноэкранного режима:', err);
+});
+} else {
+// Выход из полноэкранного режима
+document.exitFullscreen();
+}
+}
+});
+</script>
 </body>
 </html>
